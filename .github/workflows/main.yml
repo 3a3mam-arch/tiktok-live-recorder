@@ -1,24 +1,35 @@
-  - name: Set up Python
-    uses: actions/setup-python@v4
-    with:
-      python-level: '3.10'
+name: TikTok Auto Recorder 24/7
+on:
+  schedule:
+    - cron: '*/15 * * * *' # يعمل تلقائياً كل 15 دقيقة على مدار الساعة
+  workflow_dispatch: # يتيح لك تشغيل الأداة يدوياً للتجربة في أي وقت
 
-  - name: Install Dependencies
-    run: |
-      sudo apt-get update
-      sudo apt-get install -y ffmpeg
-      pip install -r requirements.txt
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-  - name: Run Recorder & Send to Telegram
-    env:
-      TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-      TG_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-    run: |
-      # هنا يتم تشغيل الأداة لفحص الأسماء المكتوبة في ملف users.txt
-      python main.py -mode automatic -ffmpeg
-      
-      # كود برمي لإرسال أي فيديو تم تسجيله إلى تليجرام تلقائياً
-      for f in *.mp4; do
-        [ -e "$f" ] || continue
-        curl -F video="@$f" https://telegram.org
-      done
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          pip install -r requirements.txt
+
+      - name: Run Recorder & Send to Telegram
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TG_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python main.py -mode automatic -ffmpeg
+          
+          for f in *.mp4; do
+            [ -e "$f" ] || continue
+            curl -F video="@$f" https://telegram.org
+          done
