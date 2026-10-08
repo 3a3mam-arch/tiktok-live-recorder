@@ -1,8 +1,8 @@
 name: TikTok Auto Recorder 24/7
 on:
   schedule:
-    - cron: '*/5 * * * *' # يعمل تلقائياً كل 5 دقائق
-  workflow_dispatch: # للتشغيل اليدوي والتجربة
+    - cron: '*/5 * * * *'   
+  workflow_dispatch: # تشغيل اليدوي والتجربة
 
 jobs:
   record:
@@ -13,7 +13,6 @@ jobs:
 
       - name: Clone Original Repository
         run: |
-          # جلب كافة ملفات الأداة الأصلية للتأكد من وجود main.py و requirements
           git clone https://github.com temp_repo
           cp -r temp_repo/* .
           rm -rf temp_repo
