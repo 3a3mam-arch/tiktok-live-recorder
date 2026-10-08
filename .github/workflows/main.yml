@@ -29,12 +29,11 @@ jobs:
           python -c '
           import os, sys, time, subprocess, requests
 
-          # جلب المسار الكامل للمجلد الرئيسي في GitHub
           workspace = os.environ.get("WORKSPACE_PATH")
           users_file = os.path.join(workspace, "users.txt")
 
           if not os.path.exists(users_file):
-              print(f"Error: users.txt not found at {users_file}!")
+              print(f"Error: users.txt not found!")
               sys.exit(1)
               
           with open(users_file, "r") as f:
@@ -45,19 +44,22 @@ jobs:
 
           for user in users:
               print(f"Checking user: {user}")
-              url = f"https://www.tiktok.com/@{user}/live"
+              url = f"https://tiktok.com@{user}/live"
               out_file = f"{user}_{int(time.time())}.mp4"
               
-              res = subprocess.run(["yt-dlp", "--check-live-status", url], capture_output=True, text=True)
+              # محاولة تحميل البث مباشرة؛ إذا كان الحساب مغلقاً سيفشل الأمر تلقائياً ويتخطاه في ثانيتين دون مشاكل
+              print(f"Attempting direct download for {user} in case they are LIVE...")
+              res = subprocess.run(["yt-dlp", "--match-filter", "is_live", "-o", out_file, url])
               
-              if "is online" in res.stdout or res.returncode == 0:
-                  print(f"User {user} is LIVE! Starting download...")
-                  subprocess.run(["yt-dlp", "-o", out_file, url])
-                  
-                  if os.path.exists(out_file) and os.path.getsize(out_file) > 0:
-                      print(f"Sending {out_file} to Telegram...")
-                      with open(out_file, "rb") as video:
-                          requests.post(f"https://telegram.org{tg_token}/sendVideo", data={"chat_id": tg_id}, files={"video": video})
+              # التحقق مما إذا تم تحميل فيديو بالفعل وإرساله لتليجرام
+              if os.path.exists(out_file) and os.path.getsize(out_file) > 100000: # تأكيد أن الملف ليس فارغاً
+                  print(f"Success! Sending recorded live for {user} to Telegram...")
+                  with open(out_file, "rb") as video:
+                      requests.post(f"https://telegram.org{tg_token}/sendVideo", data={"chat_id": tg_id}, files={"video": video})
+                  # مسح الملف من السيرفر بعد الإرسال لتوفير المساحة
+                  os.remove(out_file)
               else:
-                  print(f"User {user} is offline.")
+                  print(f"User {user} appears to be offline or stream ended.")
+                  if os.path.exists(out_file):
+                      os.remove(out_file)
           '
