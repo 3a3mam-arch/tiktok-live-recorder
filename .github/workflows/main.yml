@@ -31,6 +31,7 @@ jobs:
 
           workspace = os.environ.get("WORKSPACE_PATH")
           users_file = os.path.join(workspace, "users.txt")
+          cookies_file = os.path.join(workspace, "cookies.txt")
 
           if not os.path.exists(users_file):
               print(f"Error: users.txt not found!")
@@ -44,12 +45,16 @@ jobs:
 
           for user in users:
               print(f"Checking user: {user}")
-              # تصحيح الرابط بإضافة المائلة المفقودة بشكل صريح
               url = "https://tiktok.com@" + str(user) + "/live"
               out_file = f"{user}_{int(time.time())}.mp4"
               
-              print(f"Attempting direct download for {user} in case they are LIVE...")
-              res = subprocess.run(["yt-dlp", "--match-filter", "is_live", "-o", out_file, url])
+              cmd = ["yt-dlp", "--match-filter", "is_live", "-o", out_file]
+              if os.path.exists(cookies_file):
+                  cmd.extend(["--cookies", cookies_file])
+              cmd.append(url)
+              
+              print(f"Attempting direct download for {user}...")
+              res = subprocess.run(cmd)
               
               if os.path.exists(out_file) and os.path.getsize(out_file) > 100000:
                   print(f"Success! Sending recorded live for {user} to Telegram...")
