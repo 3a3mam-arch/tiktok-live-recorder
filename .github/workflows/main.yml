@@ -14,7 +14,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install Dependencies
         run: |
@@ -44,7 +44,7 @@ jobs:
 
           for user in users:
               print(f"Checking user: {user}")
-              url = f"https://tiktok.com@{user}/live"
+              url = "https://tiktok.com@" + str{user} + "/live"
               out_file = f"{user}_{int(time.time())}.mp4"
               
               # محاولة تحميل البث مباشرة؛ إذا كان الحساب مغلقاً سيفشل الأمر تلقائياً ويتخطاه في ثانيتين دون مشاكل
