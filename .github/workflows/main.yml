@@ -24,16 +24,20 @@ jobs:
         env:
           TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TG_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WORKSPACE_PATH: ${{ github.workspace }}
         run: |
           python -c '
           import os, sys, time, subprocess, requests
 
-          # قراءة الحسابات من الملف
-          if not os.path.exists("users.txt"):
-              print("Error: users.txt not found!")
+          # جلب المسار الكامل للمجلد الرئيسي في GitHub
+          workspace = os.environ.get("WORKSPACE_PATH")
+          users_file = os.path.join(workspace, "users.txt")
+
+          if not os.path.exists(users_file):
+              print(f"Error: users.txt not found at {users_file}!")
               sys.exit(1)
               
-          with open("users.txt", "r") as f:
+          with open(users_file, "r") as f:
               users = [line.strip() for line in f if line.strip()]
 
           tg_token = os.environ.get("TG_TOKEN")
@@ -41,19 +45,15 @@ jobs:
 
           for user in users:
               print(f"Checking user: {user}")
-              # استخدام yt-dlp للتحقق من البث المباشر وتسجيله فوراً إن وجد
-              url = f"https://tiktok.com@{user}/live"
+              url = f"https://www.tiktok.com/@{user}/live"
               out_file = f"{user}_{int(time.time())}.mp4"
               
-              print(f"Checking live status for {user}...")
               res = subprocess.run(["yt-dlp", "--check-live-status", url], capture_output=True, text=True)
               
               if "is online" in res.stdout or res.returncode == 0:
                   print(f"User {user} is LIVE! Starting download...")
-                  # بدء التسجيل وحفظ الملف
                   subprocess.run(["yt-dlp", "-o", out_file, url])
                   
-                  # إرسال الفيديو إلى تليجرام بعد انتهاء البث
                   if os.path.exists(out_file) and os.path.getsize(out_file) > 0:
                       print(f"Sending {out_file} to Telegram...")
                       with open(out_file, "rb") as video:
